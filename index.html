@@ -38,26 +38,25 @@
 
             try {
                 const response = await fetch(`https://api.allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`);
-                const data = await response.json();
-                const pageContent = data.contents;
+                if (!response.ok) throw new Error("Network response was not ok");
 
-                // Extract media name
+                const result = await response.json();
+                const pageContent = result.contents;
+
                 const mediaName = new URL(url).hostname.replace("www.", "");
 
-                // Extract title
-                const titleMatch = pageContent.match(/<title>(.*?)<\/title>/);
+                // Extract <title>
+                const titleMatch = pageContent.match(/<title.*?>(.*?)<\/title>/i);
                 const title = titleMatch ? titleMatch[1] : "Title Not Found";
 
-                // Extract image (handles both single and double quotes)
+                // Extract og:image from meta tag
                 let imgUrl = "Image Not Found";
-                const metaMatches = pageContent.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/);
-                if (metaMatches) imgUrl = metaMatches[1];
+                const ogImageMatch = pageContent.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+                if (ogImageMatch) imgUrl = ogImageMatch[1];
 
-                // Format today's date
                 const today = new Date();
                 const formattedDate = `${today.getDate()} ${today.toLocaleString('en-GB', { month: 'long' })} ${today.getFullYear()}`;
 
-                // Generate HTML
                 const generatedHTML = `
                 <div class="pub-box">
                     <p>${mediaName}</p>
@@ -72,8 +71,8 @@
                 document.getElementById("preview").innerHTML = generatedHTML;
 
             } catch (error) {
-                alert("Error fetching the news page. Try another URL.");
-                console.error(error);
+                alert("Error fetching the news page. Try another URL or check console.");
+                console.error("Fetch failed:", error);
             }
         }
 
